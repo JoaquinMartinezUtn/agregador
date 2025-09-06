@@ -3,16 +3,17 @@ server:
 
 spring:
   datasource:
+    driver-class-name: org.postgresql.Driver
     url: ${SPRING_DATASOURCE_URL:${DATABASE_URL}}
     username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME:}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:}}
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
-    open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect  # (podés quitarlo para evitar el warning)
   flyway:
     enabled: false
 
