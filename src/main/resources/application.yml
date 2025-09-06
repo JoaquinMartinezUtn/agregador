@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: agregador
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  datadog:
+    metrics:
+      export:
+        enabled: false   # <— clave correcta

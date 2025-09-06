@@ -37,18 +37,23 @@ public class Agregador {
                     hechos.addAll(
                             hechosDTO.stream()
                                     .map(dto -> {
-                                        Hecho hecho = new Hecho(dto.titulo(), dto.id(), dto.nombreColeccion());
-                                        hecho.setOrigen(fuente.getId());
-                                        return hecho;
-                                    }).toList());
+                                        Hecho h = new Hecho(dto.titulo(), dto.id(), dto.nombreColeccion());
+                                        h.setOrigen(fuente.getId());
+                                        return h;
+                                    })
+                                    .collect(java.util.stream.Collectors.toList())
+                    );
                 } catch (NoSuchElementException e) {
-                    continue;
+                    // la fuente no tiene esa colección → continuamos
+                } catch (Exception e) {
+                    // cualquier otro error (parseo, 5xx, red) → no rompemos el flujo
+                    // TODO: logger.warn("Error consultando fuente {}: {}", fuente.getNombre(), e.toString());
                 }
             }
         }
-
         return hechos;
     }
+
 
     public List<Hecho> obtenerHechosPorColeccion(String nombreColeccion) {
 
