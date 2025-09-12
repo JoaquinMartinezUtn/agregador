@@ -8,11 +8,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
+
   datadog:
     metrics:
       export:
-        enabled: false   # <— clave correcta
+        enabled: ${DD_METRICS_ENABLED:false}
+        api-key: ${DD_API_KEY:}
+        application-key: ${DD_APP_KEY:}
+        uri: ${DD_API_URI:https://api.us5.datadoghq.com}
+        step: 15s
+        descriptions: ${DD_METRICS_DESC:false}

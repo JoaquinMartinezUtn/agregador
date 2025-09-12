@@ -22,7 +22,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
-    enabled: false  
+    enabled: false
 
 management:
   endpoints:
