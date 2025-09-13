@@ -33,7 +33,6 @@ public class Fachada implements FachadaAgregador {
     this.objectMapper = objectMapper;
   }
 
-  /** Al arrancar: cargo fuentes persistidas y reconecto proxies */
   @PostConstruct
   public void init() {
     var fuentes = fuenteRepository.findAll();
@@ -52,9 +51,7 @@ public class Fachada implements FachadaAgregador {
     Fuente fuente = new Fuente(id, fuenteDto.nombre(), fuenteDto.endpoint());
     fuenteRepository.save(fuente);
 
-    // 1) agregar al agregador
     agregador.agregarFuente(fuente);
-    // 2) conectar fachada HTTP de esa fuente
     this.addFachadaFuentes(id, new FuentesProxy(fuenteDto.endpoint(), objectMapper));
 
     return convertirAFuenteDTO(fuente);

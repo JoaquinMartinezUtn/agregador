@@ -43,7 +43,6 @@ public class FuentesProxy implements FachadaFuente {
     @SneakyThrows
     @Override
     public List<HechoDTO> buscarHechosXColeccion(String nombreColeccion) {
-        // Intento principal (plural)
         var r = service.hechosPorColeccionPlural(nombreColeccion).execute();
         if (r.isSuccessful() && r.body() != null) return r.body();
         if (r.code() == 204 || r.code() == 404) {
@@ -81,13 +80,11 @@ public class FuentesProxy implements FachadaFuente {
 
     @Override
     public PdIDTO agregar(PdIDTO dto) {
-        // cuando tengas el endpoint real, lo implementamos con Retrofit
         throw new UnsupportedOperationException("agregar(PdIDTO) no implementado en FuentesProxy aún");
     }
 
     @Override
     public HechoDTO agregar(HechoDTO dto) {
-        // cuando tengas el endpoint real, lo implementamos con Retrofit
         throw new UnsupportedOperationException("agregar(HechoDTO) no implementado en FuentesProxy aún");
     }
 

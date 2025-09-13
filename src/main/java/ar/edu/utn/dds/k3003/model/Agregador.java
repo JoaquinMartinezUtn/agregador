@@ -44,9 +44,7 @@ public class Agregador {
                                     .collect(java.util.stream.Collectors.toList())
                     );
                 } catch (NoSuchElementException e) {
-                    // la fuente no tiene esa colección → continuamos
                 } catch (Exception e) {
-                    // cualquier otro error (parseo, 5xx, red) → no rompemos el flujo
                     // TODO: logger.warn("Error consultando fuente {}: {}", fuente.getNombre(), e.toString());
                 }
             }

@@ -20,15 +20,12 @@ public interface FuentesRetrofitClient {
     @POST("api/coleccion")
     Call<ColeccionDTO> crearColeccion(@Body ColeccionDTO dto);
 
-    // Hechos por colección (contrato efectivo que viste funcionando)
     @GET("api/colecciones/{nombre}/hechos")
     Call<List<HechoDTO>> hechosPorColeccionPlural(@Path("nombre") String nombre);
 
-    // Fallback por si alguna fuente usa singular
     @GET("api/coleccion/{nombre}/hechos")
     Call<List<HechoDTO>> hechosPorColeccionSingular(@Path("nombre") String nombre);
 
-    // Hecho por id + patch de borrado
     @GET("api/hecho/{id}")
     Call<HechoDTO> hecho(@Path("id") String id);
 
