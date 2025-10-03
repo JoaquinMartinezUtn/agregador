@@ -17,9 +17,13 @@ import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.model.Agregador;
 import ar.edu.utn.dds.k3003.model.Fuente;
 import ar.edu.utn.dds.k3003.model.Hecho;
-import ar.edu.utn.dds.k3003.repository.JpaFuenteRepository;
 import ar.edu.utn.dds.k3003.repository.FuenteRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import ar.edu.utn.dds.k3003.clients.FuentesProxy;
+import ar.edu.utn.dds.k3003.clients.SolicitudesProxy;
+import ar.edu.utn.dds.k3003.model.consenso.StrategyRegistry;
+import ar.edu.utn.dds.k3003.model.visibilidad.SinSolicitudesPolicy;
+import ar.edu.utn.dds.k3003.ports.SolicitudesPort;
 
 @Service
 public class Fachada implements FachadaAgregador {
@@ -27,10 +31,20 @@ public class Fachada implements FachadaAgregador {
   private final Agregador agregador = new Agregador();
   private final FuenteRepository fuenteRepository;
   private final ObjectMapper objectMapper;
+  private final StrategyRegistry strategyRegistry;
+  private final SolicitudesPort solicitudesPort;
 
-  public Fachada (@Qualifier("jpaFuenteRepository") FuenteRepository fuenteRepository, ObjectMapper objectMapper) {
+  public Fachada (
+          @Qualifier("jpaFuenteRepository") FuenteRepository fuenteRepository,
+          ObjectMapper objectMapper,
+          StrategyRegistry strategyRegistry,
+          SolicitudesProxy solicitudesProxy
+  ) {
     this.fuenteRepository = fuenteRepository;
     this.objectMapper = objectMapper;
+    this.strategyRegistry = strategyRegistry;
+    this.solicitudesPort = solicitudesProxy;
+    agregador.setStrategyRegistry(strategyRegistry);
   }
 
   @PostConstruct
@@ -78,6 +92,24 @@ public class Fachada implements FachadaAgregador {
     var hechosModelo = agregador.obtenerHechosPorColeccion(nombreColeccion);
     return hechosModelo.stream().map(this::convertirADTO).collect(java.util.stream.Collectors.toList());
   }
+
+  public List<HechoDTO> hechos(String nombreColeccion, ConsensosEnum consensoOverride, boolean estricto) {
+    agregador.setLista_fuentes(fuenteRepository.findAll());
+
+    if (consensoOverride != null) {
+      agregador.getTipoConsensoXColeccion().put(nombreColeccion, consensoOverride);
+    } else if (!agregador.getTipoConsensoXColeccion().containsKey(nombreColeccion)) {
+      throw new NoSuchElementException("No hay consenso configurado para: " + nombreColeccion);
+    }
+    var hechos = agregador.obtenerHechosPorColeccion(nombreColeccion);
+    if (estricto) {
+      var policy = new SinSolicitudesPolicy(solicitudesPort);
+      hechos = policy.filtrar(hechos);
+    }
+
+    return hechos.stream().map(this::convertirADTO).collect(java.util.stream.Collectors.toList());
+  }
+
 
   @Override
   public void addFachadaFuentes(String fuenteId, FachadaFuente fuente) {

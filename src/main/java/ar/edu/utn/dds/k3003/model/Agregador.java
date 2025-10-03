@@ -7,14 +7,16 @@ import java.util.stream.Collectors;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.ConsensosEnum;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
+import ar.edu.utn.dds.k3003.model.consenso.AggregationStrategy;
+import ar.edu.utn.dds.k3003.model.consenso.StrategyRegistry;
 import lombok.Data;
 
 @Data
 public class Agregador {
-
     private List<Fuente> lista_fuentes = new ArrayList<>();
     private Map<String, FachadaFuente> fachadaFuentes = new HashMap<>();
     private Map<String, ConsensosEnum> tipoConsensoXColeccion = new HashMap<>();
+    private StrategyRegistry strategyRegistry;
 
     public Fuente agregarFuente(Fuente newFuente) {
         lista_fuentes.add(newFuente);
@@ -27,26 +29,17 @@ public class Agregador {
 
     private List<Hecho> obtenerHechosDeTodasLasFuentes(String nombreColeccion) {
         List<Hecho> hechos = new ArrayList<>();
-
         for (Fuente fuente : lista_fuentes) {
-            FachadaFuente fachada = fachadaFuentes.get(fuente.getId());
-
-            if (fachada != null) {
-                try {
-                    List<HechoDTO> hechosDTO = fachada.buscarHechosXColeccion(nombreColeccion);
-                    hechos.addAll(
-                            hechosDTO.stream()
-                                    .map(dto -> {
-                                        Hecho h = new Hecho(dto.titulo(), dto.id(), dto.nombreColeccion());
-                                        h.setOrigen(fuente.getId());
-                                        return h;
-                                    })
-                                    .collect(java.util.stream.Collectors.toList())
-                    );
-                } catch (NoSuchElementException e) {
-                } catch (Exception e) {
-                    // TODO: logger.warn("Error consultando fuente {}: {}", fuente.getNombre(), e.toString());
-                }
+            var fachada = fachadaFuentes.get(fuente.getId());
+            if (fachada == null) continue;
+            try {
+                List<HechoDTO> hechosDTO = fachada.buscarHechosXColeccion(nombreColeccion);
+                hechos.addAll(hechosDTO.stream().map(dto -> {
+                    Hecho h = new Hecho(dto.titulo(), dto.id(), dto.nombreColeccion());
+                    h.setOrigen(fuente.getId());
+                    return h;
+                }).collect(Collectors.toList()));
+            } catch (Exception ignored) {
             }
         }
         return hechos;
@@ -54,41 +47,12 @@ public class Agregador {
 
 
     public List<Hecho> obtenerHechosPorColeccion(String nombreColeccion) {
-
-        if (!tipoConsensoXColeccion.containsKey(nombreColeccion)) {
+        if (!tipoConsensoXColeccion.containsKey(nombreColeccion))
             return Collections.emptyList();
-        }
-
         ConsensosEnum estrategia = tipoConsensoXColeccion.get(nombreColeccion);
-        List<Hecho> hechos = obtenerHechosDeTodasLasFuentes(nombreColeccion);
-        Map<String, Hecho> hechosUnicos = hechos.stream()
-                .collect(Collectors.toMap(
-                        Hecho::getTitulo,
-                        Function.identity(),
-                        (existente, nuevo) -> existente));
-        switch (estrategia) {
-            case TODOS:
-                return new ArrayList<>(hechosUnicos.values());
-            case AL_MENOS_2:
-                if (lista_fuentes.size() == 1) {
-                    return new ArrayList<>(hechosUnicos.values());
-                } else {
-                    Set<String> titulos_Repetidos = hechos.stream()
-                            .collect(Collectors.groupingBy(Hecho::getTitulo,
-                                    Collectors.mapping(Hecho::getOrigen, Collectors.toSet())))
-                            .entrySet().stream()
-                            .filter(e -> e.getValue().size() >= 2)
-                            .map(Map.Entry::getKey)
-                            .collect(Collectors.toSet());
-                    return hechos.stream().filter(h -> titulos_Repetidos.contains(h.getTitulo()))
-                            .collect(Collectors.toMap(
-                                    Hecho::getTitulo, Function.identity(),
-                                    (h1, h2) -> h1))
-                            .values().stream().collect(Collectors.toList());
-                }
-            default:
-                throw new IllegalArgumentException("Estrategia no soportada: " + estrategia);
-        }
+        List<Hecho> hechosCrudos = obtenerHechosDeTodasLasFuentes(nombreColeccion);
+        AggregationStrategy s = strategyRegistry.get(estrategia);
+        return s.aplicar(hechosCrudos);
     }
 
     public void agregarFachadaAFuente(String fuenteId, FachadaFuente fuente) {
@@ -97,9 +61,9 @@ public class Agregador {
                 .findAny()
                 .orElse(null);
 
-        if (existe_Fuente == null) {
+        if (existe_Fuente == null)
             throw new NoSuchElementException("No se encontro la fuente");
-        }
+
         fachadaFuentes.put(fuenteId, fuente);
         existe_Fuente.setFachadaFuente(fuente);
     }

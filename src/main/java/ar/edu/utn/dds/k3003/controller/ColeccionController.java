@@ -1,7 +1,9 @@
 // src/main/java/ar/edu/utn/dds/k3003/controller/ColeccionController.java
 package ar.edu.utn.dds.k3003.controller;
 
+import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.facades.FachadaAgregador;
+import ar.edu.utn.dds.k3003.facades.dtos.ConsensosEnum;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -24,10 +26,21 @@ public class ColeccionController {
     }
 
     @GetMapping("/{nombre}/hechos")
-    public ResponseEntity<List<HechoDTO>> listarHechosPorColeccion(@PathVariable String nombre) {
+    public ResponseEntity<List<HechoDTO>> listarHechosPorColeccion(
+            @PathVariable String nombre,
+            @RequestParam(value = "consenso", required = false) String consensoStr,
+            @RequestParam(value = "estricto", required = false, defaultValue = "false") boolean estricto
+    ) {
         var sample = Timer.start(meter);
         try {
-            var data = fachadaAgregador.hechos(nombre);
+            var consensoOverride = (consensoStr != null)
+                    ? ConsensosEnum.valueOf(consensoStr.toUpperCase())
+                    : null;
+
+            var data = (consensoOverride == null && !estricto)
+                    ? fachadaAgregador.hechos(nombre)
+                    : ((Fachada) fachadaAgregador).hechos(nombre, consensoOverride, estricto);
+
             meter.counter("agregador.hechos.requests",
                     "coleccion", nombre,
                     "outcome", "ok").increment();
