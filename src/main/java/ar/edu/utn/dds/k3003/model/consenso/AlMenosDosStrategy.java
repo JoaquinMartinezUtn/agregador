@@ -12,7 +12,6 @@ public class AlMenosDosStrategy implements AggregationStrategy {
     public List<Hecho> aplicar(List<Hecho> hechos) {
         if (hechos.isEmpty()) return List.of();
 
-        // Títulos que aparecen en al menos 2 orígenes distintos
         Set<String> repetidos = hechos.stream()
                 .collect(Collectors.groupingBy(Hecho::getTitulo,
                         Collectors.mapping(Hecho::getOrigen, Collectors.toSet())))
@@ -21,7 +20,6 @@ public class AlMenosDosStrategy implements AggregationStrategy {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
-        // Dedup por título, quedándome con un ejemplar de cada título repetido
         return hechos.stream()
                 .filter(h -> repetidos.contains(h.getTitulo()))
                 .collect(Collectors.toMap(Hecho::getTitulo, Function.identity(), (a, b) -> a))
