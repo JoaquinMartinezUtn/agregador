@@ -7,7 +7,6 @@ import ar.edu.utn.dds.k3003.ports.SolicitudesPort;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/** Filtra todos los hechos cuyos títulos estén asociados a alguna solicitud (da igual estado). */
 public class SinSolicitudesPolicy implements VisibilityPolicy {
 
     private final SolicitudesPort solicitudes;
@@ -19,17 +18,12 @@ public class SinSolicitudesPolicy implements VisibilityPolicy {
     @Override
     public List<Hecho> filtrar(List<Hecho> hechos) {
         if (hechos.isEmpty()) return hechos;
-
-        // Map id → título SOLO de los hechos presentes en este request
         Map<String, String> idATitulo = hechos.stream()
-                .filter(h -> h.getId() != null && !h.getId().isBlank())
+                .filter(h -> h.getId() != null && !h.getId().trim().isEmpty())
                 .collect(Collectors.toMap(Hecho::getId, Hecho::getTitulo, (a, b) -> a));
-
-        if (idATitulo.isEmpty()) return hechos; // nada que cruzar
-
+        if (idATitulo.isEmpty()) return hechos;
         Set<String> idsPresentes = idATitulo.keySet();
 
-        // Una sola consulta: trae todas las solicitudes y filtrá por ids que están en este request
         List<SolicitudDTO> solicitudesAll = solicitudes.listarTodas();
         Set<String> titulosBloqueados = solicitudesAll.stream()
                 .map(SolicitudDTO::hechoId)
