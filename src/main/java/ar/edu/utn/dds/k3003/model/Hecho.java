@@ -15,7 +15,7 @@ public class Hecho {
     @Column(name = "id", nullable = false, unique = true)
     private String id;
 
-    @Column(name = "nombre_coleccion", nullable = false)
+    @Column(name = "nombreColeccion", nullable = false)
     private String coleccionNombre;
 
     @Column(name = "titulo", nullable = false)

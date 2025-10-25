@@ -9,24 +9,30 @@ import ar.edu.utn.dds.k3003.facades.dtos.ConsensosEnum;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.model.consenso.AggregationStrategy;
 import ar.edu.utn.dds.k3003.model.consenso.StrategyRegistry;
+import ar.edu.utn.dds.k3003.model.consenso.ConsensoTipo;
 import lombok.Data;
 
 @Data
 public class Agregador {
     private List<Fuente> lista_fuentes = new ArrayList<>();
     private Map<String, FachadaFuente> fachadaFuentes = new HashMap<>();
-    private Map<String, ConsensosEnum> tipoConsensoXColeccion = new HashMap<>();
+    private Map<String, ConsensoTipo> tipoConsensoXColeccion = new HashMap<>();
     private StrategyRegistry strategyRegistry;
+
+    public Map<String, ConsensoTipo> getTipoConsensoXColeccion() { return tipoConsensoXColeccion; }
 
     public Fuente agregarFuente(Fuente newFuente) {
         lista_fuentes.add(newFuente);
         return newFuente;
     }
 
-    public void configurarConsenso(ConsensosEnum consenso, String nombreColeccion) {
-        tipoConsensoXColeccion.put(nombreColeccion, consenso);
+    public void configurarConsenso(ConsensoTipo tipo, String nombreColeccion) {
+        tipoConsensoXColeccion.put(nombreColeccion, tipo);
     }
 
+    public void configurarConsenso(ConsensosEnum ext, String nombreColeccion) {
+        configurarConsenso(ConsensoTipo.from(ext), nombreColeccion);
+    }
     private List<Hecho> obtenerHechosDeTodasLasFuentes(String nombreColeccion) {
         List<Hecho> hechos = new ArrayList<>();
         for (Fuente fuente : lista_fuentes) {
@@ -49,8 +55,10 @@ public class Agregador {
     public List<Hecho> obtenerHechosPorColeccion(String nombreColeccion) {
         if (!tipoConsensoXColeccion.containsKey(nombreColeccion))
             return Collections.emptyList();
-        ConsensosEnum estrategia = tipoConsensoXColeccion.get(nombreColeccion);
+
+        ConsensoTipo estrategia = tipoConsensoXColeccion.get(nombreColeccion);
         List<Hecho> hechosCrudos = obtenerHechosDeTodasLasFuentes(nombreColeccion);
+
         AggregationStrategy s = strategyRegistry.get(estrategia);
         return s.aplicar(hechosCrudos);
     }
@@ -67,4 +75,5 @@ public class Agregador {
         fachadaFuentes.put(fuenteId, fuente);
         existe_Fuente.setFachadaFuente(fuente);
     }
+
 }

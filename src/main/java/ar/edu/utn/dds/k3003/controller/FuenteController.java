@@ -28,4 +28,13 @@ public class FuenteController {
         return ResponseEntity.ok(fachadaAgregador.agregar(fuenteDTO));
     }
 
+    @DeleteMapping("/limpiar")
+    public ResponseEntity<Void> limpiarFuentes() {
+        if (fachadaAgregador instanceof ar.edu.utn.dds.k3003.app.Fachada fachadaConcreta) {
+            fachadaConcreta.limpiarFuentes();
+        } else {
+            throw new UnsupportedOperationException("La fachada actual no soporta limpiarFuentes()");
+        }
+        return ResponseEntity.noContent().build();
+    }
 }

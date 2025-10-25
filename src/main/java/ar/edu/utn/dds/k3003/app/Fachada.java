@@ -19,11 +19,11 @@ import ar.edu.utn.dds.k3003.model.Fuente;
 import ar.edu.utn.dds.k3003.model.Hecho;
 import ar.edu.utn.dds.k3003.repository.FuenteRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
-import ar.edu.utn.dds.k3003.clients.FuentesProxy;
 import ar.edu.utn.dds.k3003.clients.SolicitudesProxy;
 import ar.edu.utn.dds.k3003.model.consenso.StrategyRegistry;
 import ar.edu.utn.dds.k3003.model.visibilidad.SinSolicitudesPolicy;
 import ar.edu.utn.dds.k3003.ports.SolicitudesPort;
+import ar.edu.utn.dds.k3003.model.consenso.ConsensoTipo;
 
 @Service
 public class Fachada implements FachadaAgregador {
@@ -97,17 +97,18 @@ public class Fachada implements FachadaAgregador {
     agregador.setLista_fuentes(fuenteRepository.findAll());
 
     if (consensoOverride != null) {
-      agregador.getTipoConsensoXColeccion().put(nombreColeccion, consensoOverride);
+      agregador.getTipoConsensoXColeccion()
+              .put(nombreColeccion, ConsensoTipo.from(consensoOverride));
     } else if (!agregador.getTipoConsensoXColeccion().containsKey(nombreColeccion)) {
       throw new NoSuchElementException("No hay consenso configurado para: " + nombreColeccion);
     }
+
     var hechos = agregador.obtenerHechosPorColeccion(nombreColeccion);
     if (estricto) {
       var policy = new SinSolicitudesPolicy(solicitudesPort);
       hechos = policy.filtrar(hechos);
     }
-
-    return hechos.stream().map(this::convertirADTO).collect(java.util.stream.Collectors.toList());
+    return hechos.stream().map(this::convertirADTO).collect(Collectors.toList());
   }
 
 
@@ -128,5 +129,23 @@ public class Fachada implements FachadaAgregador {
 
   private FuenteDTO convertirAFuenteDTO(Fuente fuente) {
     return new FuenteDTO(fuente.getId(), fuente.getNombre(), fuente.getEndpoint());
+  }
+
+  public void setConsensoStrategyString(String tipo, String nombreColeccion) {
+    var interno = ConsensoTipo.parse(tipo);
+    agregador.configurarConsenso(interno, nombreColeccion);
+  }
+
+  public void limpiarFuentes() {
+    fuenteRepository.deleteAll();
+    if (agregador.getLista_fuentes() != null) {
+      agregador.getLista_fuentes().clear();
+    }
+    if (agregador.getFachadaFuentes() != null) {
+      agregador.getFachadaFuentes().clear();
+    }
+    if (agregador.getTipoConsensoXColeccion() != null) {
+      agregador.getTipoConsensoXColeccion().clear();
+    }
   }
 }
